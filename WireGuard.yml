@@ -12,7 +12,7 @@ proxies:
     type: wireguard
     private-key: 8BH3lDNUt54aM55EeXpq6+RB7qmvfqZMFCwaaIqyd0E
     address: 10.8.0.2/24
-    endpoint: 38.244.50.6:443
+    endpoint: 38.244.50.6:51260
     allowed-ips: 0.0.0.0/0
     dns-server: 8.8.8.8
 
@@ -51,4 +51,5 @@ rules:
 
   # 其他流量走 WireGuard VPN
   - MATCH,WireGuard-VPN
+
 
