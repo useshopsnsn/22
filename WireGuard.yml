@@ -1,105 +1,59 @@
 port: 7890
 socks-port: 7891
-redir-port: 7892
-mixed-port: 7893
-allow-lan: true
-mode: rule
-log-level: info
-external-controller: 127.0.0.1:9090
+mode: Rule
 
+# 代理节点
 proxies:
-  - name: "WireGuard-VPN"
-    type: wireguard
-    private-key: 8BH3lDNUt54aM55EeXpq6+RB7qmvfqZMFCwaaIqyd0E
-    address: 10.8.0.2/24
-    endpoint: 38.244.50.6:51261
-    allowed-ips: 0.0.0.0/0
-    dns-server: 8.8.8.8
-
-  - name: "Residential-SOCKS5"
+  # 您原有的代理节点（保持不变）...
+  - name: "🚀 US-VPN-01"
+    type: vmess
+    server: xxx.xxx.xxx
+    port: 443
+    uuid: xxxxxxxx
+  
+  # 新增的 Claude 专用 SOCKS5 代理
+  - name: "🔒 Claude-Only-SOCKS5"
     type: socks5
-    server: 173.232.95.199
-    port: 32000
-    username: E7QhU2mIgf
-    password: XtKx2Bzn8G
+    server: 108.165.57.149
+    port: 11222
+    username: tzr
+    password: pvn
 
+# 代理组
 proxy-groups:
-  - name: "PROXY"
+  # 您原有的代理组...
+  - name: "🚀 Auto-Select"
+    type: url-test
+    url: http://www.gstatic.com/generate_204
+    interval: 300
+    proxies:
+      - "🚀 US-VPN-01"
+      - "🚀 JP-VPN-02"
+  
+  # Claude 专用代理组
+  - name: "🎯 Claude-Proxy"
     type: select
     proxies:
-      - "Residential-SOCKS5"
-      - "WireGuard-VPN"
+      - "🔒 Claude-Only-SOCKS5"
+      - DIRECT
 
+# 规则
 rules:
-  # Claude.ai 流量走住宅 SOCKS5
-  - DOMAIN-SUFFIX,claude.ai,Residential-SOCKS5
-  - DOMAIN-SUFFIX,anthropic.com,Residential-SOCKS5
-
-  # 本地 PHPStudy / 内网访问直连
-  - IP-CIDR,192.168.0.0/16,DIRECT
-  - IP-CIDR,10.0.0.0/8,DIRECT
-  - IP-CIDR,127.0.0.0/8,DIRECT
-
-  # 国内常用网站走直连
+  # ========== Claude 专用规则 ==========
+  - DOMAIN-SUFFIX,claude.ai,🎯 Claude-Proxy
+  - DOMAIN-SUFFIX,anthropic.com,🎯 Claude-Proxy
+  - DOMAIN-SUFFIX,api.anthropic.com,🎯 Claude-Proxy
+  - DOMAIN-KEYWORD,claude,🎯 Claude-Proxy
+  
+  # ========== 您原有的规则 ==========
+  # 国内直连
   - DOMAIN-SUFFIX,baidu.com,DIRECT
   - DOMAIN-SUFFIX,taobao.com,DIRECT
-  - DOMAIN-SUFFIX,qq.com,DIRECT
-  - DOMAIN-SUFFIX,weibo.com,DIRECT
-  - DOMAIN-SUFFIX,zhihu.com,DIRECT
-  - DOMAIN-SUFFIX,bilibili.com,DIRECT
-  - DOMAIN-SUFFIX,jd.com,DIRECT
-  - DOMAIN-SUFFIX,liblib.com,DIRECT
-  - DOMAIN-SUFFIX,163.com,DIRECT
-  - DOMAIN-SUFFIX,126.com,DIRECT
-  - DOMAIN-SUFFIX,sohu.com,DIRECT
-  - DOMAIN-SUFFIX,sina.com.cn,DIRECT
-  - DOMAIN-SUFFIX,ifeng.com,DIRECT
-  - DOMAIN-SUFFIX,people.com.cn,DIRECT
-  - DOMAIN-SUFFIX,cctv.com,DIRECT
-  - DOMAIN-SUFFIX,chinadaily.com.cn,DIRECT
-  - DOMAIN-SUFFIX,tmall.com,DIRECT
-  - DOMAIN-SUFFIX,alipay.com,DIRECT
-  - DOMAIN-SUFFIX,alibaba.com,DIRECT
-  - DOMAIN-SUFFIX,meituan.com,DIRECT
-  - DOMAIN-SUFFIX,dianping.com,DIRECT
-  - DOMAIN-SUFFIX,pinduoduo.com,DIRECT
-  - DOMAIN-SUFFIX,yanxuan.com,DIRECT
-  - DOMAIN-SUFFIX,wechat.com,DIRECT
-  - DOMAIN-SUFFIX,weixin.qq.com,DIRECT
-  - DOMAIN-SUFFIX,xiaohongshu.com,DIRECT
-  - DOMAIN-SUFFIX,miaopai.com,DIRECT
-  - DOMAIN-SUFFIX,youku.com,DIRECT
-  - DOMAIN-SUFFIX,iqiyi.com,DIRECT
-  - DOMAIN-SUFFIX,iq.com,DIRECT
-  - DOMAIN-SUFFIX,mgtv.com,DIRECT
-  - DOMAIN-SUFFIX,kuaishou.com,DIRECT
-  - DOMAIN-SUFFIX,acfun.cn,DIRECT
-  - DOMAIN-SUFFIX,duowan.com,DIRECT
-  - DOMAIN-SUFFIX,douyu.com,DIRECT
-  - DOMAIN-SUFFIX,huya.com,DIRECT
-  - DOMAIN-SUFFIX,qqmusic.qq.com,DIRECT
-  - DOMAIN-SUFFIX,kuwo.cn,DIRECT
-  - DOMAIN-SUFFIX,kugou.com,DIRECT
-  - DOMAIN-SUFFIX,360.cn,DIRECT
-  - DOMAIN-SUFFIX,360.com,DIRECT
-  - DOMAIN-SUFFIX,wps.cn,DIRECT
-  - DOMAIN-SUFFIX,kingsoft.com,DIRECT
-  - DOMAIN-SUFFIX,iqiyi.com,DIRECT
-  - DOMAIN-SUFFIX,xiaomi.com,DIRECT
-  - DOMAIN-SUFFIX,huawei.com,DIRECT
-  - DOMAIN-SUFFIX,vivo.com,DIRECT
-  - DOMAIN-SUFFIX,oppo.com,DIRECT
-  - DOMAIN-SUFFIX,mi.com,DIRECT
-  - DOMAIN-SUFFIX,aliyun.com,DIRECT
-  - DOMAIN-SUFFIX,qcloud.com,DIRECT
-  - DOMAIN-SUFFIX,tencentcloud.com,DIRECT
-
-
-
-
-
-  # 其他流量走 WireGuard VPN
-  - MATCH,WireGuard-VPN
-
-
-
+  - GEOIP,CN,DIRECT
+  
+  # 其他服务
+  - DOMAIN-SUFFIX,openai.com,🚀 Auto-Select
+  - DOMAIN-SUFFIX,chatgpt.com,🚀 Auto-Select
+  
+  # 最终规则
+  - MATCH,🚀 Auto-Select
