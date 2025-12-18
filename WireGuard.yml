@@ -1,59 +1,46 @@
-port: 7890
+mixed-port: 7890
 socks-port: 7891
-mode: Rule
+mode: rule
 
-# 代理节点
+# 从 WireGuard.yml 中提取的代理配置
 proxies:
-  # 您原有的代理节点（保持不变）...
-  - name: "🚀 US-VPN-01"
-    type: vmess
-    server: xxx.xxx.xxx
-    port: 443
-    uuid: xxxxxxxx
-  
-  # 新增的 Claude 专用 SOCKS5 代理
-  - name: "🔒 Claude-Only-SOCKS5"
+  # 保留您原来的 SOCKS5 代理用于 Claude
+  - name: "🔒 Claude-SOCKS5"
     type: socks5
     server: 108.165.57.149
     port: 11222
     username: tzr
     password: pvn
-
-# 代理组
-proxy-groups:
-  # 您原有的代理组...
-  - name: "🚀 Auto-Select"
-    type: url-test
-    url: http://www.gstatic.com/generate_204
-    interval: 300
-    proxies:
-      - "🚀 US-VPN-01"
-      - "🚀 JP-VPN-02"
   
-  # Claude 专用代理组
-  - name: "🎯 Claude-Proxy"
+  # 从 WireGuard 配置中添加其他代理（如果需要）
+  # - name: "WireGuard-USA"
+  #   type: wireguard
+  #   server: xxx.xxx.xxx.xxx
+  #   port: 443
+  #   ip: 10.0.0.2
+  #   private-key: xxx
+  #   public-key: xxx
+
+proxy-groups:
+  - name: "🎯 For-Claude"
     type: select
     proxies:
-      - "🔒 Claude-Only-SOCKS5"
+      - "🔒 Claude-SOCKS5"
+      - DIRECT
+  
+  - name: "🚀 Auto-Select"
+    type: url-test
+    url: "http://www.gstatic.com/generate_204"
+    interval: 300
+    proxies:
+      # 这里添加 WireGuard 代理
+      # - "WireGuard-USA"
       - DIRECT
 
-# 规则
 rules:
-  # ========== Claude 专用规则 ==========
-  - DOMAIN-SUFFIX,claude.ai,🎯 Claude-Proxy
-  - DOMAIN-SUFFIX,anthropic.com,🎯 Claude-Proxy
-  - DOMAIN-SUFFIX,api.anthropic.com,🎯 Claude-Proxy
-  - DOMAIN-KEYWORD,claude,🎯 Claude-Proxy
-  
-  # ========== 您原有的规则 ==========
-  # 国内直连
-  - DOMAIN-SUFFIX,baidu.com,DIRECT
-  - DOMAIN-SUFFIX,taobao.com,DIRECT
-  - GEOIP,CN,DIRECT
-  
-  # 其他服务
-  - DOMAIN-SUFFIX,openai.com,🚀 Auto-Select
-  - DOMAIN-SUFFIX,chatgpt.com,🚀 Auto-Select
+  # Claude 走专用 SOCKS5
+  - DOMAIN-SUFFIX,claude.ai,🎯 For-Claude
+  - DOMAIN-SUFFIX,anthropic.com,🎯 For-Claude
   
   # 最终规则
   - MATCH,🚀 Auto-Select
